@@ -30,7 +30,7 @@
 
 **Qwen Upscaler Studio** is an all-in-one open-source production stack that unifies state-of-the-art vision and diffusion models into an optimized containerized workflow:
 
-1. **Qwen 2.1 Turbo (NVFP4 Quantization)**: Distilled 8-step lightning text-to-image generator producing photorealistic anatomical accuracy, complex lighting, and typography in **~1.7 seconds** on modern hardware.
+1. **Qwen 2.1 Turbo (NVFP4 Quantization)**: Distilled 8-step lightning text-to-image generator producing photorealistic anatomical accuracy, complex lighting, and typography in just seconds on any modern GPU.
 2. **Qwen3-VL 8B Reference Conditioning**: Multimodal instruction-guided image editing. Modify clothing, backgrounds, or cinematic lighting while strictly preserving subject facial identity, pose, and physical proportions.
 3. **SeedVR2 (EMA 3B FP8)**: State-of-the-art temporal diffusion super-resolution model for upscaling photography and video up to **4K UHD (2160p 60fps)** with perceptual reconstruction and color matching.
 4. **1-Click 4K Combo Pipeline**: Generate a fresh concept with Qwen Turbo and upscale it directly into fine 4K micro-textures through an automated orchestration pipeline with intelligent VRAM offloading.
@@ -39,7 +39,7 @@
 
 ## ✨ Key Features
 
-- **⚡ Instant 8-Step Synthesis**: Photorealistic generation in ~1.7s (RTX 5090) or ~3.2s (RTX A5000), saving up to 90% in cloud GPU compute costs compared to traditional 30-50 step diffusion models.
+- **⚡ Instant 8-Step Synthesis**: Photorealistic generation in 8 distilled steps, saving up to 90% in cloud GPU compute costs compared to traditional 30-50 step diffusion models across any modern NVIDIA GPU.
 - **🔍 4K Photo & Video Super-Resolution**: Upscale static imagery or 60fps videos using temporal window tiling, FP8 attention, and customized FFmpeg NVENC acceleration.
 - **🔄 Zero-OOM VRAM Orchestrator**: Runs both ComfyUI diffusion graphs and SeedVR2 super-resolution inside a single 24GB VRAM envelope via dynamic memory flushing (`free_comfyui_memory()` + PyTorch CUDA cache clearing).
 - **📱 Fully Responsive Modern UI**: Built with Tailwind CSS, dark glassmorphism, prompt presets, seed controls, real-time GPU telemetry, and an outputs gallery. Adapts seamlessly to mobile viewports.
@@ -162,14 +162,16 @@ docker run --gpus all \
 
 ---
 
-### Option D: Hugging Face Space Connection
+### Option D: Hugging Face Space Connection (Web Client)
 
-A lightweight, static web client is deployed at [huggingface.co/spaces/s3rfdev/qwen_upscaler](https://huggingface.co/spaces/s3rfdev/qwen_upscaler).
+A live web client is hosted at [huggingface.co/spaces/s3rfdev/qwen_upscaler](https://huggingface.co/spaces/s3rfdev/qwen_upscaler).
 
-1. Open the Hugging Face Space.
-2. Click the **Endpoint / Settings** button in the header.
-3. Enter the public URL of your SaladCloud or Vast.ai instance (e.g. `https://your-node.salad.cloud`).
-4. Generate images and 4K videos directly through the Hugging Face Space!
+> [!NOTE]
+> **Why the Space requires a GPU backend:**
+> Generating 4K imagery and neural super-resolution requires a 24GB+ GPU. To keep public hosting 100% free without incurring Hugging Face's expensive $1.05/hr GPU billing, this Space operates as a decoupled frontend client.
+>
+> 1. **Interactive Demo Mode:** Click **Try Demo Mode** in the header banner to explore the interface, inspect gallery outputs, and simulate generations.
+> 2. **Live GPU Generation:** Click **Endpoint** in the header, paste your deployed SaladCloud, Vast.ai, or Local Docker address (e.g. `https://your-node.salad.net`), and start generating instantly.
 
 ---
 

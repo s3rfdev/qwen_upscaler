@@ -42,7 +42,7 @@
               <span class="badge-qwen text-[10px] font-semibold px-2 py-0.5 rounded-full">Qwen 2.1 Turbo (NVFP4)</span>
               <span class="badge-seed text-[10px] font-semibold px-2 py-0.5 rounded-full">SeedVR2 4K</span>
             </div>
-            <p class="text-[11px] sm:text-xs text-slate-400">Lightning ~1.7s T2I · AI Photo Editing · Ultra 4K Photo & Video Upscaling</p>
+            <p class="text-[11px] sm:text-xs text-slate-400">Lightning 8-Step T2I · AI Photo Editing · Ultra 4K Photo & Video Upscaling</p>
           </div>
         </div>
 
@@ -55,9 +55,9 @@
       <!-- GPU Telemetry & Backend Switcher -->
       <div class="flex items-center justify-between sm:justify-end gap-2 text-xs">
         <div id="gpuBadge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="gpuName" class="font-medium text-slate-200">RTX A5000 24GB</span>
-          <span id="gpuVram" class="text-indigo-300 border-l border-slate-700 pl-2">VRAM: -- / 24 GB</span>
+          <span id="gpuStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="gpuName" class="font-medium text-slate-300">Checking Endpoint...</span>
+          <span id="gpuVram" class="text-indigo-300 border-l border-slate-700 pl-2">VRAM: --</span>
         </div>
         <div class="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60">
           <i class="fa-solid fa-layer-group text-slate-400"></i>
@@ -72,6 +72,24 @@
 
     </div>
   </header>
+
+  <!-- Notice Banner When No GPU Backend Connected -->
+  <div id="backendBanner" class="hidden bg-indigo-950/80 border-b border-indigo-500/30 px-4 py-2.5 text-xs text-indigo-200">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2 text-center sm:text-left">
+        <i class="fa-solid fa-circle-exclamation text-amber-400 text-sm"></i>
+        <span><strong>GPU Backend Required:</strong> Connect your SaladCloud, Vast.ai, or Local Docker instance to run live AI generation.</span>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="openSettingsModal('Connect your SaladCloud, Vast.ai, or Local Docker endpoint to enable GPU generation.')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs transition flex items-center gap-1.5">
+          <i class="fa-solid fa-plug text-[11px]"></i> Connect Backend
+        </button>
+        <button onclick="enableDemoMode()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition flex items-center gap-1.5" title="Preview UI with mock sample outputs">
+          <i class="fa-solid fa-play text-amber-400 text-[11px]"></i> Try Demo Mode
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Workspace -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7">
@@ -151,14 +169,14 @@
             <label class="block text-xs font-semibold text-slate-400 mb-1">Sampler / Speed</label>
             <div class="text-xs bg-slate-800/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-300 flex items-center justify-between">
               <span>⚡ 8 Steps · Euler</span>
-              <span class="text-emerald-400 font-mono text-[11px]">~1.7s</span>
+              <span class="text-emerald-400 font-mono text-[11px]">Lightning</span>
             </div>
           </div>
         </div>
 
         <button id="btnSubmitGen" onclick="submitGenerate()" class="w-full py-3.5 rounded-xl text-sm font-bold text-white btn-gradient shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition flex items-center justify-center gap-2">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
-          <span>Generate Image (~1.7s on RTX 5090)</span>
+          <span>Generate Image (Lightning 8-Step)</span>
         </button>
       </div>
 
@@ -269,7 +287,7 @@
         <div class="p-3 bg-gradient-to-r from-indigo-950/40 to-purple-950/40 border border-indigo-500/30 rounded-xl text-xs text-indigo-200 flex items-start gap-2.5">
           <i class="fa-solid fa-bolt text-indigo-400 mt-0.5"></i>
           <div>
-            <strong>1-Click Ultra Pipeline:</strong> Qwen Turbo generates composition in ~1.7s, followed by SeedVR2 neural super-resolution bringing textures, skin pores, and details to cinema 4K!
+            <strong>1-Click Ultra Pipeline:</strong> Qwen Turbo generates composition in 8 lightning steps, followed by SeedVR2 neural super-resolution bringing textures, skin pores, and micro-details to cinema 4K!
           </div>
         </div>
 
@@ -400,18 +418,29 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-sliders text-indigo-400"></i>
-          <h3 class="text-sm font-bold text-white">Backend Connection</h3>
+          <h3 class="text-sm font-bold text-white">GPU Backend Connection</h3>
         </div>
         <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
+      <!-- Notice Alert -->
+      <div id="modalNotice" class="hidden p-3 bg-indigo-950/60 border border-indigo-500/40 rounded-xl text-xs text-indigo-200 flex items-start gap-2">
+        <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+        <span id="modalNoticeText">Connect your running GPU backend to start generating.</span>
+      </div>
+
       <div class="space-y-3 text-xs">
         <div>
           <label class="block font-semibold text-slate-300 mb-1">API Base URL</label>
           <input type="text" id="apiEndpointInput" placeholder="e.g., https://your-salad-node.salad.cloud or http://localhost:8000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
-          <p class="text-[10px] text-slate-500 mt-1">Leave empty to use the current host origin (default for self-hosted container).</p>
+          <p class="text-[10px] text-slate-500 mt-1">Leave empty to use current origin (for self-hosted Docker).</p>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="document.getElementById('apiEndpointInput').value='http://localhost:8000'; testConnectionStatus();" class="text-[11px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">💻 Local: localhost:8000</button>
+          <button type="button" onclick="document.getElementById('apiEndpointInput').value=''; testConnectionStatus();" class="text-[11px] bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">🌐 Same Origin</button>
         </div>
 
         <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
@@ -448,8 +477,15 @@
       return base ? `${base}${cleanPath}` : cleanPath;
     }
 
-    function openSettingsModal() {
+    function openSettingsModal(customNotice) {
       document.getElementById('apiEndpointInput').value = getApiBase();
+      const noticeEl = document.getElementById('modalNotice');
+      if (customNotice) {
+        document.getElementById('modalNoticeText').innerText = customNotice;
+        noticeEl.classList.remove('hidden');
+      } else {
+        noticeEl.classList.add('hidden');
+      }
       testConnectionStatus();
       document.getElementById('settingsModal').classList.remove('hidden');
     }
@@ -498,6 +534,8 @@
     // -------------------------------------------------------------------------
     // State
     // -------------------------------------------------------------------------
+    let backendConnected = false;
+    let isDemoMode = false;
     let currentMainTab = 'gen';
     let currentGenWidth = 1024, currentGenHeight = 1024;
     let currentComboWidth = 1024, currentComboHeight = 1024;
@@ -509,6 +547,62 @@
     let activeJobId = null;
     let timerInterval = null;
     let startTime = 0;
+
+    function enableDemoMode() {
+      isDemoMode = true;
+      document.getElementById('backendBanner').classList.add('hidden');
+      document.getElementById('gpuStatusDot').className = 'w-2 h-2 rounded-full bg-amber-400';
+      document.getElementById('gpuName').innerText = 'Interactive Demo Mode';
+      document.getElementById('gpuVram').innerText = 'Simulated VRAM';
+      
+      galleryItems = [
+        {
+          job_id: 'demo_starship',
+          filename: 'engineer_starship_4k.jpg',
+          url: 'https://raw.githubusercontent.com/s3rfdev/qwen_upscaler/main/docs/screenshots/sample_qwen_turbo_render.jpg',
+          type: 'generate',
+          media_type: 'image',
+          prompt: 'Biomechanical alien starship entering Earth orbit, photorealistic planetary curvature, soft atmospheric rim lighting',
+          duration: 2.1,
+          size_mb: '1.4'
+        }
+      ];
+      renderGallery(galleryItems);
+    }
+
+    function runDemoJob(title) {
+      startJobUI(title);
+      let pct = 20;
+      const stepMessages = ['Loading weights...', 'Running 8-step lightning diffusion...', 'Decoding VAE latents...', 'Enhancing micro-details...'];
+      let stepIdx = 0;
+      const demoInterval = setInterval(() => {
+        pct += 25;
+        if (pct > 100) pct = 100;
+        document.getElementById('activeJobBar').style.width = pct + '%';
+        document.getElementById('activeJobPct').innerText = pct + '%';
+        if (stepIdx < stepMessages.length) {
+          document.getElementById('activeJobStep').innerText = stepMessages[stepIdx++];
+        }
+        if (pct >= 100) {
+          clearInterval(demoInterval);
+          setTimeout(() => {
+            stopJobUI();
+            const promptVal = document.getElementById('genPrompt').value || document.getElementById('comboPrompt').value || 'Demo generated output';
+            galleryItems.unshift({
+              job_id: 'demo_' + Date.now(),
+              filename: 'demo_output_' + Date.now() + '.jpg',
+              url: 'https://raw.githubusercontent.com/s3rfdev/qwen_upscaler/main/docs/screenshots/sample_qwen_turbo_render.jpg',
+              type: currentMainTab === 'upscale' ? 'upscale_photo' : (currentMainTab === 'combo' ? 'combo' : (currentMainTab === 'edit' ? 'edit' : 'generate')),
+              media_type: 'image',
+              prompt: promptVal,
+              duration: 1.9,
+              size_mb: '1.1'
+            });
+            renderGallery(galleryItems);
+          }, 600);
+        }
+      }, 500);
+    }
 
     // -------------------------------------------------------------------------
     // Main Tab Switching
@@ -641,15 +735,24 @@
     async function submitGenerate() {
       const prompt = document.getElementById('genPrompt').value.trim();
       if (!prompt) return alert('Please enter a generation prompt!');
-      const seed = parseInt(document.getElementById('genSeed').value) || 0;
 
+      if (!backendConnected) {
+        if (isDemoMode) {
+          runDemoJob('Simulating 8-Step Generation...');
+          return;
+        }
+        openSettingsModal('GPU Backend Required: Please connect your running SaladCloud, Vast.ai, or Local Docker instance to generate images.');
+        return;
+      }
+
+      const seed = parseInt(document.getElementById('genSeed').value) || 0;
       const fd = new FormData();
       fd.append('prompt', prompt);
       fd.append('width', currentGenWidth);
       fd.append('height', currentGenHeight);
       fd.append('seed', seed);
 
-      startJobUI('Generating with Qwen Turbo (~1.7s)');
+      startJobUI('Generating with Qwen Turbo');
       try {
         const res = await fetch(apiUrl('/api/generate'), { method: 'POST', body: fd });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -662,9 +765,18 @@
     }
 
     async function submitEdit() {
-      if (!editFile) return alert('Please upload a reference image to edit!');
+      if (!editFile && !isDemoMode) return alert('Please upload a reference image to edit!');
       const prompt = document.getElementById('editPrompt').value.trim();
-      if (!prompt) return alert('Please specify what to edit in the prompt!');
+      if (!prompt && !isDemoMode) return alert('Please specify what to edit in the prompt!');
+
+      if (!backendConnected) {
+        if (isDemoMode) {
+          runDemoJob('Simulating Instruction Edit (Qwen3-VL)...');
+          return;
+        }
+        openSettingsModal('GPU Backend Required: Please connect your running backend to edit images.');
+        return;
+      }
 
       const fd = new FormData();
       fd.append('file', editFile);
@@ -683,7 +795,17 @@
     }
 
     async function submitUpscale() {
-      if (!upscaleFile) return alert('Please select a file to upscale!');
+      if (!upscaleFile && !isDemoMode) return alert('Please select a file to upscale!');
+
+      if (!backendConnected) {
+        if (isDemoMode) {
+          runDemoJob(`Simulating SeedVR2 Upscale (${currentUpscaleRes}p)...`);
+          return;
+        }
+        openSettingsModal('GPU Backend Required: Please connect your running backend for 4K super-resolution.');
+        return;
+      }
+
       const fd = new FormData();
       fd.append('file', upscaleFile);
       fd.append('media_type', currentUpscaleMediaType);
@@ -703,7 +825,16 @@
 
     async function submitCombo() {
       const prompt = document.getElementById('comboPrompt').value.trim();
-      if (!prompt) return alert('Please enter a prompt for 1-Click 4K Combo!');
+      if (!prompt && !isDemoMode) return alert('Please enter a prompt for 1-Click 4K Combo!');
+
+      if (!backendConnected) {
+        if (isDemoMode) {
+          runDemoJob('Simulating 1-Click 4K Combo Pipeline...');
+          return;
+        }
+        openSettingsModal('GPU Backend Required: Please connect your running backend for 1-Click 4K generation.');
+        return;
+      }
 
       const fd = new FormData();
       fd.append('prompt', prompt);
@@ -782,14 +913,25 @@
     async function updateStats() {
       try {
         const res = await fetch(apiUrl('/api/stats'));
-        if (!res.ok) return;
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        backendConnected = true;
+        document.getElementById('backendBanner').classList.add('hidden');
         if (data.gpu) {
+          document.getElementById('gpuStatusDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
           document.getElementById('gpuName').innerText = data.gpu.name || 'Cloud GPU';
           document.getElementById('gpuVram').innerText = `VRAM: ${data.gpu.free_gb} / ${data.gpu.total_gb} GB`;
         }
         document.getElementById('queueCount').innerText = data.queue_count || 0;
-      } catch (e) {}
+      } catch (e) {
+        if (!isDemoMode) {
+          backendConnected = false;
+          document.getElementById('backendBanner').classList.remove('hidden');
+          document.getElementById('gpuStatusDot').className = 'w-2 h-2 rounded-full bg-rose-400';
+          document.getElementById('gpuName').innerText = 'No Backend Connected';
+          document.getElementById('gpuVram').innerText = 'Click Endpoint';
+        }
+      }
     }
 
     // -------------------------------------------------------------------------
