@@ -1,0 +1,38 @@
+# Environment & Secrets
+.env
+*.env
+*.pem
+*.key
+id_rsa*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Data & Runtime artifacts
+data/
+outputs/
+uploads/
+*.log
+salad_app/outputs/*
+salad_app/uploads/*
+!salad_app/outputs/.gitkeep
+!salad_app/uploads/.gitkeep
+
+# System & OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

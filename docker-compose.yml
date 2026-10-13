@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  qwen-studio:
+    image: s3rfdev/qwen-turbo-upscaler:latest
+    container_name: qwen-turbo-upscaler
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PORT=8000
+    volumes:
+      - ./data/outputs:/app/salad_app/outputs
+      - ./data/uploads:/app/salad_app/uploads
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

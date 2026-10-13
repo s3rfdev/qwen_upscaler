@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Qwen Upscaler Studio · Qwen 2.1 Turbo & SeedVR2 4K</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #080c14; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    .glass { background: rgba(15, 22, 36, 0.82); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card { background: rgba(19, 28, 46, 0.65); border: 1px solid rgba(255, 255, 255, 0.06); }
+    .neon-glow:hover { box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.45); }
+    .active-nav-tab { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #ffffff !important; box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35); }
+    .active-sub-tab { background: #312e81; color: #c7d2fe; border-color: #6366f1; }
+    .btn-gradient { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+    .btn-gradient:hover { background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%); }
+    .badge-qwen { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; }
+    .badge-seed { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 3px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="glass sticky top-0 z-40 px-4 sm:px-6 py-3 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      
+      <!-- Brand & Badges -->
+      <div class="flex items-center justify-between sm:justify-start gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 flex-shrink-0">
+            <i class="fa-solid fa-atom text-lg sm:text-xl text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
+              <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">Qwen Upscaler Studio</h1>
+              <span class="badge-qwen text-[10px] font-semibold px-2 py-0.5 rounded-full">Qwen 2.1 Turbo (NVFP4)</span>
+              <span class="badge-seed text-[10px] font-semibold px-2 py-0.5 rounded-full">SeedVR2 4K</span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-400">Lightning ~1.7s T2I · AI Photo Editing · Ultra 4K Photo & Video Upscaling</p>
+          </div>
+        </div>
+
+        <!-- Mobile Settings Trigger -->
+        <button onclick="openSettingsModal()" class="sm:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-gear text-sm"></i>
+        </button>
+      </div>
+
+      <!-- GPU Telemetry & Backend Switcher -->
+      <div class="flex items-center justify-between sm:justify-end gap-2 text-xs">
+        <div id="gpuBadge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="gpuName" class="font-medium text-slate-200">RTX A5000 24GB</span>
+          <span id="gpuVram" class="text-indigo-300 border-l border-slate-700 pl-2">VRAM: -- / 24 GB</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60">
+          <i class="fa-solid fa-layer-group text-slate-400"></i>
+          <span>Queue: <strong id="queueCount" class="text-indigo-400">0</strong></span>
+        </div>
+        <!-- Desktop Settings Trigger -->
+        <button onclick="openSettingsModal()" title="Backend Connection Settings" class="hidden sm:flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2.5 py-1.5 rounded-xl border border-slate-700/60 transition">
+          <i class="fa-solid fa-sliders text-xs text-indigo-400"></i>
+          <span class="text-[11px] font-medium">Endpoint</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-7">
+    
+    <!-- Left Column: Controls (5 cols) -->
+    <section class="lg:col-span-5 space-y-4 sm:space-y-5">
+      
+      <!-- Main Mode Switcher Tabs -->
+      <div class="glass p-1.5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-1.5 border border-slate-800">
+        <button id="navTabGen" onclick="switchMainTab('gen')" class="py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 active-nav-tab">
+          <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+          <span>Text-to-Image</span>
+        </button>
+        <button id="navTabEdit" onclick="switchMainTab('edit')" class="py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-paintbrush text-xs"></i>
+          <span>Photo Edit</span>
+        </button>
+        <button id="navTabUpscale" onclick="switchMainTab('upscale')" class="py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-expand text-xs"></i>
+          <span>4K Upscaler</span>
+        </button>
+        <button id="navTabCombo" onclick="switchMainTab('combo')" class="py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-bolt text-xs text-amber-400"></i>
+          <span>1-Click 4K</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 1: Text-to-Image Generation -->
+      <div id="contentGen" class="glass p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4 sm:space-y-5">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Generation Prompt</label>
+          <textarea id="genPrompt" rows="4" placeholder="Describe the scene... (e.g., A luxury fashion editorial photograph of a model in ivory silk gown, brutalist gallery, 85mm portrait, hard sunlight, film grain)" class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          
+          <!-- Prompt Preset Pills -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button type="button" onclick="fillGenPrompt('fashion')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">👑 Fashion</button>
+            <button type="button" onclick="fillGenPrompt('scifi')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">🚀 Sci-Fi Starship</button>
+            <button type="button" onclick="fillGenPrompt('cyberpunk')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">🏙️ Cyberpunk</button>
+            <button type="button" onclick="fillGenPrompt('typo')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">🔤 Typography</button>
+          </div>
+        </div>
+
+        <!-- Aspect Ratio -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Aspect Ratio</label>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            <button type="button" onclick="setAspectRatio(1024, 1024, this)" class="ar-btn py-2 px-1 text-center rounded-lg border border-indigo-500 bg-indigo-950/40 text-xs font-semibold text-indigo-300 transition">
+              1:1<br><span class="text-[10px] text-slate-400">1024²</span>
+            </button>
+            <button type="button" onclick="setAspectRatio(1280, 720, this)" class="ar-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              16:9<br><span class="text-[10px] text-slate-400">Landscape</span>
+            </button>
+            <button type="button" onclick="setAspectRatio(720, 1280, this)" class="ar-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              9:16<br><span class="text-[10px] text-slate-400">Portrait</span>
+            </button>
+            <button type="button" onclick="setAspectRatio(1152, 864, this)" class="ar-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              4:3<br><span class="text-[10px] text-slate-400">Standard</span>
+            </button>
+            <button type="button" onclick="setAspectRatio(864, 1152, this)" class="ar-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              3:4<br><span class="text-[10px] text-slate-400">Poster</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Seed & Sampler Config -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Seed (0 = random)</label>
+            <div class="flex gap-2">
+              <input type="number" id="genSeed" value="0" class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200">
+              <button type="button" onclick="document.getElementById('genSeed').value = Math.floor(Math.random()*2147483647)" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 text-xs" title="Randomize seed">
+                <i class="fa-solid fa-dice"></i>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Sampler / Speed</label>
+            <div class="text-xs bg-slate-800/60 border border-slate-700/80 rounded-xl px-3 py-2 text-slate-300 flex items-center justify-between">
+              <span>⚡ 8 Steps · Euler</span>
+              <span class="text-emerald-400 font-mono text-[11px]">~1.7s</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnSubmitGen" onclick="submitGenerate()" class="w-full py-3.5 rounded-xl text-sm font-bold text-white btn-gradient shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Generate Image (~1.7s on RTX 5090)</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 2: Image Editing (Qwen3-VL 8B) -->
+      <div id="contentEdit" class="hidden glass p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4 sm:space-y-5">
+        <div class="p-3 bg-indigo-950/30 border border-indigo-500/30 rounded-xl text-xs text-indigo-300 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+          <div>
+            <strong>Instruction-Guided Editing with Qwen3-VL 8B:</strong> Preserves subject identity, posture, and lighting while altering exactly what you specify in the prompt!
+          </div>
+        </div>
+
+        <!-- Reference Image Upload -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Reference Image</label>
+          <div id="dropZoneEdit" onclick="document.getElementById('fileEditInput').click()" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-5 text-center cursor-pointer transition bg-slate-900/40">
+            <input type="file" id="fileEditInput" accept="image/*" class="hidden" onchange="handleEditFileSelected(this)">
+            <div id="editDropPlaceholder" class="space-y-2">
+              <i class="fa-solid fa-image text-2xl text-indigo-400"></i>
+              <p class="text-xs text-slate-300">Click to select or drag & drop reference photo</p>
+              <p class="text-[10px] text-slate-500">PNG, JPG, WebP supported</p>
+            </div>
+            <div id="editFilePreview" class="hidden flex items-center justify-center gap-3">
+              <img id="editThumb" class="w-16 h-16 object-cover rounded-lg border border-slate-700" alt="Preview">
+              <div class="text-left">
+                <p id="editFileName" class="text-xs font-semibold text-slate-200 truncate max-w-[180px]"></p>
+                <p id="editFileSize" class="text-[10px] text-slate-400"></p>
+                <span class="text-[10px] text-indigo-400">Click to replace file</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Prompt -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Editing Instruction</label>
+          <textarea id="editPrompt" rows="3" placeholder="What to modify? (e.g., Keep the same woman and pose. Change her dress to a glowing royal blue evening gown with silk folds.)" class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button type="button" onclick="fillEditPrompt('dress')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">👗 Change Outfit</button>
+            <button type="button" onclick="fillEditPrompt('bg')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">🌌 Change Background</button>
+            <button type="button" onclick="fillEditPrompt('lighting')" class="text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-2 py-1 rounded-lg border border-slate-700">💡 Cinematic Lighting</button>
+          </div>
+        </div>
+
+        <button id="btnSubmitEdit" onclick="submitEdit()" class="w-full py-3.5 rounded-xl text-sm font-bold text-white btn-gradient shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paintbrush"></i>
+          <span>Apply Edits</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 3: SeedVR2 4K Upscaler -->
+      <div id="contentUpscale" class="hidden glass p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4 sm:space-y-5">
+        <!-- Subtabs: Photo / Video -->
+        <div class="glass p-1 rounded-xl grid grid-cols-2 gap-1 border border-slate-800">
+          <button id="subTabPhoto" onclick="setUpscaleMediaType('image')" class="py-2 px-3 rounded-lg text-xs font-semibold transition active-sub-tab">
+            <i class="fa-solid fa-image mr-1"></i> Photo Upscale
+          </button>
+          <button id="subTabVideo" onclick="setUpscaleMediaType('video')" class="py-2 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-film mr-1"></i> Video Upscale (60fps)
+          </button>
+        </div>
+
+        <!-- Upscale Dropzone -->
+        <div id="dropZoneUpscale" onclick="document.getElementById('fileUpscaleInput').click()" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer transition bg-slate-900/40">
+          <input type="file" id="fileUpscaleInput" class="hidden" onchange="handleUpscaleFileSelected(this)">
+          <div id="upscaleDropPlaceholder" class="space-y-2">
+            <i id="upscaleIcon" class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-400"></i>
+            <p id="upscaleDropText" class="text-xs text-slate-300">Select image (PNG, JPG, WebP) for 4K upscale</p>
+            <p class="text-[10px] text-slate-500">SeedVR2 neural diffusion reconstruction</p>
+          </div>
+          <div id="upscaleFilePreview" class="hidden flex items-center justify-center gap-3">
+            <div class="text-left">
+              <p id="upscaleFileName" class="text-xs font-semibold text-slate-200 truncate max-w-[200px]"></p>
+              <p id="upscaleFileSize" class="text-[10px] text-slate-400"></p>
+              <span class="text-[10px] text-emerald-400">Click to change file</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target Resolution -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Target Resolution</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" onclick="setUpscaleRes(720, this)" class="res-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              720p HD
+            </button>
+            <button type="button" onclick="setUpscaleRes(1080, this)" class="res-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              1080p FHD
+            </button>
+            <button type="button" onclick="setUpscaleRes(1440, this)" class="res-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition">
+              1440p 2K
+            </button>
+            <button type="button" onclick="setUpscaleRes(2160, this)" class="res-btn py-2 px-1 text-center rounded-lg border border-emerald-500 bg-emerald-950/40 text-xs font-semibold text-emerald-300 transition">
+              2160p 4K UHD
+            </button>
+          </div>
+        </div>
+
+        <button id="btnSubmitUpscale" onclick="submitUpscale()" class="w-full py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-expand"></i>
+          <span>Enhance with SeedVR2</span>
+        </button>
+      </div>
+
+      <!-- Tab Content 4: 1-Click 4K Combo Pipeline -->
+      <div id="contentCombo" class="hidden glass p-4 sm:p-6 rounded-2xl border border-slate-800 space-y-4 sm:space-y-5">
+        <div class="p-3 bg-gradient-to-r from-indigo-950/40 to-purple-950/40 border border-indigo-500/30 rounded-xl text-xs text-indigo-200 flex items-start gap-2.5">
+          <i class="fa-solid fa-bolt text-indigo-400 mt-0.5"></i>
+          <div>
+            <strong>1-Click Ultra Pipeline:</strong> Qwen Turbo generates composition in ~1.7s, followed by SeedVR2 neural super-resolution bringing textures, skin pores, and details to cinema 4K!
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Prompt for 4K Masterpiece</label>
+          <textarea id="comboPrompt" rows="4" placeholder="Describe the scene... It will be generated instantly and automatically upscaled to 4K UHD!" class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Frame Format</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="setComboAspect(1024, 1024, this)" class="combo-ar-btn py-2 text-center rounded-lg border border-indigo-500 bg-indigo-950/40 text-xs font-semibold text-indigo-300">
+              1:1 Square
+            </button>
+            <button type="button" onclick="setComboAspect(1280, 720, this)" class="combo-ar-btn py-2 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 text-xs font-semibold text-slate-300">
+              16:9 Cinema
+            </button>
+            <button type="button" onclick="setComboAspect(720, 1280, this)" class="combo-ar-btn py-2 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 text-xs font-semibold text-slate-300">
+              9:16 Reels
+            </button>
+          </div>
+        </div>
+
+        <button id="btnSubmitCombo" onclick="submitCombo()" class="w-full py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Create Direct in 4K (Qwen + SeedVR2)</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Right Column: Queue Status & Gallery (7 cols) -->
+    <section class="lg:col-span-7 space-y-5">
+      
+      <!-- Active Job Progress Card -->
+      <div id="activeJobCard" class="hidden glass p-4 sm:p-5 rounded-2xl border border-indigo-500/40 shadow-xl shadow-indigo-950/30">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-3 h-3 rounded-full bg-indigo-500 animate-ping"></div>
+            <span id="activeJobTitle" class="text-xs font-bold uppercase tracking-wider text-indigo-300">Task in progress</span>
+          </div>
+          <span id="activeJobTimer" class="font-mono text-xs text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-md border border-slate-800">00:00</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden mb-2.5 border border-slate-800">
+          <div id="activeJobBar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-300" style="width: 20%"></div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span id="activeJobStep">Initializing pipeline...</span>
+          <span id="activeJobPct" class="font-mono text-indigo-400">20%</span>
+        </div>
+      </div>
+
+      <!-- Gallery Header & Filters -->
+      <div class="glass p-4 rounded-2xl border border-slate-800 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-photo-film text-indigo-400"></i>
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider">Outputs Gallery</h2>
+            <span id="galleryCount" class="text-[11px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">0</span>
+          </div>
+          <button onclick="fetchGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-800 transition" title="Refresh Gallery">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        <!-- Filter Buttons (Scrollable on small mobile screens) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+          <button onclick="filterGallery('all', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-medium flex-shrink-0">All</button>
+          <button onclick="filterGallery('generate', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0">✨ Generations</button>
+          <button onclick="filterGallery('edit', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0">🎨 Edits</button>
+          <button onclick="filterGallery('upscale_photo', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0">📷 4K Photos</button>
+          <button onclick="filterGallery('upscale_video', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0">🎬 4K Videos</button>
+          <button onclick="filterGallery('combo', this)" class="gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0">🚀 1-Click 4K</button>
+        </div>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 max-h-[640px] overflow-y-auto custom-scrollbar p-1">
+        <!-- Dynamic items render here -->
+      </div>
+      
+      <!-- Empty State Placeholder -->
+      <div id="emptyGallery" class="glass p-10 sm:p-12 rounded-2xl border border-slate-800 text-center text-slate-500 text-sm">
+        <i class="fa-solid fa-photo-film text-4xl mb-3 opacity-30"></i>
+        <p>Gallery is currently empty. Generate an image or upload media to produce 4K UHD results!</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Image Lightbox Modal -->
+  <div id="imageModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="relative max-w-5xl max-h-[92vh] flex flex-col items-center w-full">
+      <button onclick="closeImageModal()" class="absolute -top-10 right-0 sm:right-2 text-slate-400 hover:text-white text-2xl p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <img id="modalImg" class="max-w-full max-h-[80vh] object-contain rounded-xl border border-slate-800 shadow-2xl" alt="Enlarged view">
+      <div class="mt-3 flex items-center gap-3">
+        <a id="modalDownload" href="#" download class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl flex items-center gap-2">
+          <i class="fa-solid fa-download"></i> Download Full Resolution
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Player Modal -->
+  <div id="videoModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="relative max-w-4xl w-full flex flex-col items-center">
+      <button onclick="closeVideoModal()" class="absolute -top-10 right-0 sm:right-2 text-slate-400 hover:text-white text-2xl p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <video id="modalVideo" controls loop playsinline class="w-full max-h-[80vh] rounded-xl border border-slate-800 bg-black"></video>
+      <div class="mt-3 flex items-center gap-3">
+        <a id="modalVideoDownload" href="#" download class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl flex items-center gap-2">
+          <i class="fa-solid fa-download"></i> Download 4K Video
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backend Connection Settings Modal (Portable for HF Space / Remote Demo) -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-indigo-400"></i>
+          <h3 class="text-sm font-bold text-white">Backend Connection</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">API Base URL</label>
+          <input type="text" id="apiEndpointInput" placeholder="e.g., https://your-salad-node.salad.cloud or http://localhost:8000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
+          <p class="text-[10px] text-slate-500 mt-1">Leave empty to use the current host origin (default for self-hosted container).</p>
+        </div>
+
+        <div class="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center justify-between">
+          <span class="text-slate-400">Connection Status:</span>
+          <span id="connStatusText" class="font-semibold text-amber-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Testing...
+          </span>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveApiEndpoint()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition">
+          Save & Connect
+        </button>
+        <button onclick="resetApiEndpoint()" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+          Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // API Endpoint Manager (Local / Remote / Hugging Face Spaces)
+    // -------------------------------------------------------------------------
+    function getApiBase() {
+      const stored = localStorage.getItem('qwen_api_base');
+      return stored ? stored.replace(/\/+$/, '') : '';
+    }
+
+    function apiUrl(path) {
+      const base = getApiBase();
+      const cleanPath = path.startsWith('/') ? path : '/' + path;
+      return base ? `${base}${cleanPath}` : cleanPath;
+    }
+
+    function openSettingsModal() {
+      document.getElementById('apiEndpointInput').value = getApiBase();
+      testConnectionStatus();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function saveApiEndpoint() {
+      const val = document.getElementById('apiEndpointInput').value.trim();
+      if (val) {
+        localStorage.setItem('qwen_api_base', val);
+      } else {
+        localStorage.removeItem('qwen_api_base');
+      }
+      closeSettingsModal();
+      updateStats();
+      fetchGallery();
+    }
+
+    function resetApiEndpoint() {
+      localStorage.removeItem('qwen_api_base');
+      document.getElementById('apiEndpointInput').value = '';
+      testConnectionStatus();
+    }
+
+    async function testConnectionStatus() {
+      const statusEl = document.getElementById('connStatusText');
+      statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Checking...';
+      statusEl.className = 'font-semibold text-amber-400 flex items-center gap-1.5';
+      try {
+        const res = await fetch(apiUrl('/api/stats'), { cache: 'no-store' });
+        if (res.ok) {
+          statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Connected';
+          statusEl.className = 'font-semibold text-emerald-400 flex items-center gap-1.5';
+        } else {
+          statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400"></span> HTTP ' + res.status;
+          statusEl.className = 'font-semibold text-rose-400 flex items-center gap-1.5';
+        }
+      } catch (e) {
+        statusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400"></span> Offline';
+        statusEl.className = 'font-semibold text-rose-400 flex items-center gap-1.5';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+    let currentMainTab = 'gen';
+    let currentGenWidth = 1024, currentGenHeight = 1024;
+    let currentComboWidth = 1024, currentComboHeight = 1024;
+    let currentUpscaleMediaType = 'image';
+    let currentUpscaleRes = 2160;
+    let editFile = null;
+    let upscaleFile = null;
+    let galleryItems = [];
+    let activeJobId = null;
+    let timerInterval = null;
+    let startTime = 0;
+
+    // -------------------------------------------------------------------------
+    // Main Tab Switching
+    // -------------------------------------------------------------------------
+    function switchMainTab(tab) {
+      currentMainTab = tab;
+      ['Gen', 'Edit', 'Upscale', 'Combo'].forEach(t => {
+        const btn = document.getElementById('navTab' + t);
+        const cnt = document.getElementById('content' + t);
+        if (t.toLowerCase() === tab) {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 active-nav-tab';
+          cnt.classList.remove('hidden');
+        } else {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 text-slate-400 hover:text-white';
+          cnt.classList.add('hidden');
+        }
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // Aspect Ratio Setters
+    // -------------------------------------------------------------------------
+    function setAspectRatio(w, h, btn) {
+      currentGenWidth = w;
+      currentGenHeight = h;
+      document.querySelectorAll('.ar-btn').forEach(b => {
+        b.className = 'ar-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition';
+      });
+      btn.className = 'ar-btn py-2 px-1 text-center rounded-lg border border-indigo-500 bg-indigo-950/40 text-xs font-semibold text-indigo-300 transition';
+    }
+
+    function setComboAspect(w, h, btn) {
+      currentComboWidth = w;
+      currentComboHeight = h;
+      document.querySelectorAll('.combo-ar-btn').forEach(b => {
+        b.className = 'combo-ar-btn py-2 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 text-xs font-semibold text-slate-300';
+      });
+      btn.className = 'combo-ar-btn py-2 text-center rounded-lg border border-indigo-500 bg-indigo-950/40 text-xs font-semibold text-indigo-300';
+    }
+
+    function setUpscaleMediaType(type) {
+      currentUpscaleMediaType = type;
+      const btnPhoto = document.getElementById('subTabPhoto');
+      const btnVideo = document.getElementById('subTabVideo');
+      const fileInput = document.getElementById('fileUpscaleInput');
+      const icon = document.getElementById('upscaleIcon');
+      const text = document.getElementById('upscaleDropText');
+
+      if (type === 'image') {
+        btnPhoto.className = 'py-2 px-3 rounded-lg text-xs font-semibold transition active-sub-tab';
+        btnVideo.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+        fileInput.accept = 'image/*';
+        icon.className = 'fa-solid fa-image text-3xl text-emerald-400';
+        text.innerText = 'Select image (PNG, JPG, WebP) for 4K upscale';
+      } else {
+        btnVideo.className = 'py-2 px-3 rounded-lg text-xs font-semibold transition active-sub-tab';
+        btnPhoto.className = 'py-2 px-3 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+        fileInput.accept = 'video/*';
+        icon.className = 'fa-solid fa-film text-3xl text-emerald-400';
+        text.innerText = 'Select video (MP4, MOV) for temporal 60fps 4K upscale';
+      }
+    }
+
+    function setUpscaleRes(res, btn) {
+      currentUpscaleRes = res;
+      document.querySelectorAll('.res-btn').forEach(b => {
+        b.className = 'res-btn py-2 px-1 text-center rounded-lg border border-slate-700/80 bg-slate-800/50 hover:bg-slate-700/50 text-xs font-semibold text-slate-300 transition';
+      });
+      btn.className = 'res-btn py-2 px-1 text-center rounded-lg border border-emerald-500 bg-emerald-950/40 text-xs font-semibold text-emerald-300 transition';
+    }
+
+    // -------------------------------------------------------------------------
+    // Prompt Presets
+    // -------------------------------------------------------------------------
+    function fillGenPrompt(type) {
+      const area = document.getElementById('genPrompt');
+      if (type === 'fashion') {
+        area.value = "A luxury fashion editorial photograph of a fictional 29-year-old model wearing a sculptural ivory silk gown with asymmetrical neckline and fitted waist, posed in a brutalist gallery with an enormous burgundy circular sculpture. Hard afternoon sunlight, realistic satin folds, medium format film.";
+      } else if (type === 'scifi') {
+        area.value = "Cinematic photograph of a massive extraterrestrial engineer biomechanical starship slowly entering Earth orbit, photorealistic planetary curvature, soft atmospheric rim lighting, deep space starfield, ultra high detail 8k resolution.";
+      } else if (type === 'cyberpunk') {
+        area.value = "Atmospheric street photography of rainy cyberpunk Neo-Tokyo alleyway at night, vibrant neon signs reflecting in wet asphalt, steam rising from grates, 35mm f/1.4 cinematic grading.";
+      } else if (type === 'typo') {
+        area.value = "Retro typography poster with large bold text saying 'QWEN 4K STUDIO', chrome metallic reflections, neon grid background, sharp edges, 80s synthwave style.";
+      }
+    }
+
+    function fillEditPrompt(type) {
+      const area = document.getElementById('editPrompt');
+      if (type === 'dress') {
+        area.value = "Keep the same person, face, pose, camera, lighting and background. Change only her outfit into a deep royal-blue silk evening gown with identical folds and realistic satin texture.";
+      } else if (type === 'bg') {
+        area.value = "Keep the main person and foreground elements completely untouched. Replace the background with an ultra-detailed futuristic observation deck overlooking Earth from orbit.";
+      } else if (type === 'lighting') {
+        area.value = "Keep the identity and composition unchanged. Shift lighting to dramatic warm sunset golden hour rim light with soft film bloom.";
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // File Handlers
+    // -------------------------------------------------------------------------
+    function handleEditFileSelected(input) {
+      if (input.files && input.files[0]) {
+        editFile = input.files[0];
+        document.getElementById('editFileName').innerText = editFile.name;
+        document.getElementById('editFileSize').innerText = (editFile.size / (1024*1024)).toFixed(2) + ' MB';
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('editThumb').src = e.target.result;
+          document.getElementById('editDropPlaceholder').classList.add('hidden');
+          document.getElementById('editFilePreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(editFile);
+      }
+    }
+
+    function handleUpscaleFileSelected(input) {
+      if (input.files && input.files[0]) {
+        upscaleFile = input.files[0];
+        document.getElementById('upscaleFileName').innerText = upscaleFile.name;
+        document.getElementById('upscaleFileSize').innerText = (upscaleFile.size / (1024*1024)).toFixed(2) + ' MB';
+        document.getElementById('upscaleDropPlaceholder').classList.add('hidden');
+        document.getElementById('upscaleFilePreview').classList.remove('hidden');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Job Submissions
+    // -------------------------------------------------------------------------
+    async function submitGenerate() {
+      const prompt = document.getElementById('genPrompt').value.trim();
+      if (!prompt) return alert('Please enter a generation prompt!');
+      const seed = parseInt(document.getElementById('genSeed').value) || 0;
+
+      const fd = new FormData();
+      fd.append('prompt', prompt);
+      fd.append('width', currentGenWidth);
+      fd.append('height', currentGenHeight);
+      fd.append('seed', seed);
+
+      startJobUI('Generating with Qwen Turbo (~1.7s)');
+      try {
+        const res = await fetch(apiUrl('/api/generate'), { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        pollJob(data.job_id);
+      } catch (err) {
+        alert('Submission failed: ' + err);
+        stopJobUI();
+      }
+    }
+
+    async function submitEdit() {
+      if (!editFile) return alert('Please upload a reference image to edit!');
+      const prompt = document.getElementById('editPrompt').value.trim();
+      if (!prompt) return alert('Please specify what to edit in the prompt!');
+
+      const fd = new FormData();
+      fd.append('file', editFile);
+      fd.append('prompt', prompt);
+
+      startJobUI('Editing with Qwen3-VL 8B');
+      try {
+        const res = await fetch(apiUrl('/api/edit'), { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        pollJob(data.job_id);
+      } catch (err) {
+        alert('Submission failed: ' + err);
+        stopJobUI();
+      }
+    }
+
+    async function submitUpscale() {
+      if (!upscaleFile) return alert('Please select a file to upscale!');
+      const fd = new FormData();
+      fd.append('file', upscaleFile);
+      fd.append('media_type', currentUpscaleMediaType);
+      fd.append('resolution', currentUpscaleRes);
+
+      startJobUI(`SeedVR2 Upscaling (${currentUpscaleRes}p)`);
+      try {
+        const res = await fetch(apiUrl('/api/upscale'), { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        pollJob(data.job_id);
+      } catch (err) {
+        alert('Submission failed: ' + err);
+        stopJobUI();
+      }
+    }
+
+    async function submitCombo() {
+      const prompt = document.getElementById('comboPrompt').value.trim();
+      if (!prompt) return alert('Please enter a prompt for 1-Click 4K Combo!');
+
+      const fd = new FormData();
+      fd.append('prompt', prompt);
+      fd.append('width', currentComboWidth);
+      fd.append('height', currentComboHeight);
+
+      startJobUI('1-Click 4K Combo: Qwen Turbo -> SeedVR2');
+      try {
+        const res = await fetch(apiUrl('/api/combo'), { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        pollJob(data.job_id);
+      } catch (err) {
+        alert('Submission failed: ' + err);
+        stopJobUI();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Active Job UI & Polling
+    // -------------------------------------------------------------------------
+    function startJobUI(title) {
+      document.getElementById('activeJobCard').classList.remove('hidden');
+      document.getElementById('activeJobTitle').innerText = title;
+      document.getElementById('activeJobStep').innerText = 'Initializing task...';
+      document.getElementById('activeJobBar').style.width = '15%';
+      document.getElementById('activeJobPct').innerText = '15%';
+      startTime = Date.now();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        document.getElementById('activeJobTimer').innerText = `${m}:${s}`;
+      }, 500);
+    }
+
+    function stopJobUI() {
+      clearInterval(timerInterval);
+      document.getElementById('activeJobCard').classList.add('hidden');
+    }
+
+    async function pollJob(jobId) {
+      activeJobId = jobId;
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(apiUrl(`/api/status/${jobId}`));
+          if (!res.ok) return;
+          const job = await res.json();
+
+          document.getElementById('activeJobStep').innerText = job.step_info || 'Processing...';
+          const p = job.progress || 25;
+          document.getElementById('activeJobBar').style.width = p + '%';
+          document.getElementById('activeJobPct').innerText = p + '%';
+
+          if (job.status === 'completed') {
+            clearInterval(interval);
+            setTimeout(() => {
+              stopJobUI();
+              fetchGallery();
+            }, 800);
+          } else if (job.status === 'failed') {
+            clearInterval(interval);
+            alert('Job Execution Error: ' + (job.error || 'Unknown Error'));
+            stopJobUI();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 1000);
+    }
+
+    // -------------------------------------------------------------------------
+    // Telemetry & Stats
+    // -------------------------------------------------------------------------
+    async function updateStats() {
+      try {
+        const res = await fetch(apiUrl('/api/stats'));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.gpu) {
+          document.getElementById('gpuName').innerText = data.gpu.name || 'Cloud GPU';
+          document.getElementById('gpuVram').innerText = `VRAM: ${data.gpu.free_gb} / ${data.gpu.total_gb} GB`;
+        }
+        document.getElementById('queueCount').innerText = data.queue_count || 0;
+      } catch (e) {}
+    }
+
+    // -------------------------------------------------------------------------
+    // Gallery
+    // -------------------------------------------------------------------------
+    async function fetchGallery() {
+      try {
+        const res = await fetch(apiUrl('/api/gallery'));
+        if (!res.ok) return;
+        galleryItems = await res.json();
+        renderGallery(galleryItems);
+      } catch (e) {}
+    }
+
+    function filterGallery(type, btn) {
+      document.querySelectorAll('.gallery-filter-btn').forEach(b => {
+        b.className = 'gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex-shrink-0';
+      });
+      if (btn) {
+        btn.className = 'gallery-filter-btn text-xs px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white font-medium flex-shrink-0';
+      }
+
+      if (type === 'all') {
+        renderGallery(galleryItems);
+      } else {
+        const filtered = galleryItems.filter(i => i.type === type);
+        renderGallery(filtered);
+      }
+    }
+
+    function renderGallery(items) {
+      const grid = document.getElementById('galleryGrid');
+      const empty = document.getElementById('emptyGallery');
+      document.getElementById('galleryCount').innerText = items ? items.length : 0;
+
+      if (!items || items.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      grid.innerHTML = items.map(item => {
+        const isVideo = item.media_type === 'video';
+        const fileUrl = apiUrl(item.url);
+        const downloadUrl = apiUrl(`/api/download/${item.job_id}/${item.filename}`);
+        const typeBadge = {
+          'generate': '<span class="badge-qwen text-[9px] px-1.5 py-0.5 rounded font-semibold">T2I</span>',
+          'edit': '<span class="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-[9px] px-1.5 py-0.5 rounded font-semibold">Edit</span>',
+          'upscale_photo': '<span class="badge-seed text-[9px] px-1.5 py-0.5 rounded font-semibold">4K Photo</span>',
+          'upscale_video': '<span class="badge-seed text-[9px] px-1.5 py-0.5 rounded font-semibold">4K Video</span>',
+          'combo': '<span class="bg-pink-900/40 text-pink-300 border border-pink-700/50 text-[9px] px-1.5 py-0.5 rounded font-semibold">1-Click 4K</span>'
+        }[item.type] || '';
+
+        return `
+          <div class="glass-card rounded-xl overflow-hidden border border-slate-800 group hover:border-indigo-500/50 transition">
+            <div class="relative aspect-square bg-slate-950 flex items-center justify-center overflow-hidden cursor-pointer" onclick="${isVideo ? `openVideoModal('${fileUrl}')` : `openImageModal('${fileUrl}')`}">
+              ${isVideo 
+                ? `<video src="${fileUrl}" muted playsinline class="w-full h-full object-cover"></video><div class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10"><i class="fa-solid fa-circle-play text-3xl text-white/80"></i></div>`
+                : `<img src="${fileUrl}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy" alt="Generated artifact">`
+              }
+              <div class="absolute top-2 left-2 flex gap-1">${typeBadge}</div>
+            </div>
+            <div class="p-2.5 space-y-1">
+              <p class="text-[11px] text-slate-300 truncate" title="${item.prompt || item.filename}">${item.prompt || item.filename}</p>
+              <div class="flex items-center justify-between text-[10px] text-slate-500">
+                <span>${item.duration}s · ${item.size_mb} MB</span>
+                <div class="flex items-center gap-2">
+                  <a href="${downloadUrl}" download class="hover:text-indigo-400 p-1" title="Download"><i class="fa-solid fa-download"></i></a>
+                  <button onclick="deleteJob('${item.job_id}')" class="hover:text-red-400 p-1" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteJob(id) {
+      if (!confirm('Delete this generated output?')) return;
+      await fetch(apiUrl(`/api/job/${id}`), { method: 'DELETE' });
+      fetchGallery();
+    }
+
+    // -------------------------------------------------------------------------
+    // Modals
+    // -------------------------------------------------------------------------
+    function openImageModal(url) {
+      document.getElementById('modalImg').src = url;
+      document.getElementById('modalDownload').href = url;
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+    }
+    function openVideoModal(url) {
+      const vid = document.getElementById('modalVideo');
+      vid.src = url;
+      document.getElementById('modalVideoDownload').href = url;
+      document.getElementById('videoModal').classList.remove('hidden');
+      vid.play().catch(() => {});
+    }
+    function closeVideoModal() {
+      const vid = document.getElementById('modalVideo');
+      vid.pause();
+      vid.src = '';
+      document.getElementById('videoModal').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // Initialization
+    // -------------------------------------------------------------------------
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    if (initialTab && ['gen', 'edit', 'upscale', 'combo'].includes(initialTab.toLowerCase())) {
+      switchMainTab(initialTab.toLowerCase());
+    }
+
+    updateStats();
+    fetchGallery();
+    setInterval(updateStats, 3000);
+  </script>
+</body>
+</html>
