@@ -561,12 +561,22 @@
         {
           job_id: 'demo_starship',
           filename: 'engineer_starship_4k.jpg',
-          url: 'https://raw.githubusercontent.com/s3rfdev/qwen_upscaler/main/docs/screenshots/sample_qwen_turbo_render.jpg',
+          url: 'sample_render.jpg',
           type: 'generate',
           media_type: 'image',
           prompt: 'Biomechanical alien starship entering Earth orbit, photorealistic planetary curvature, soft atmospheric rim lighting',
           duration: 2.1,
           size_mb: '1.4'
+        },
+        {
+          job_id: 'demo_fashion',
+          filename: 'luxury_fashion_editorial.jpg',
+          url: 'sample_render.jpg',
+          type: 'upscale_photo',
+          media_type: 'image',
+          prompt: 'Luxury fashion editorial, ivory silk gown, brutalist gallery',
+          duration: 3.4,
+          size_mb: '2.8'
         }
       ];
       renderGallery(galleryItems);
@@ -1050,6 +1060,11 @@
     const initialTab = urlParams.get('tab');
     if (initialTab && ['gen', 'edit', 'upscale', 'combo'].includes(initialTab.toLowerCase())) {
       switchMainTab(initialTab.toLowerCase());
+    }
+
+    if (urlParams.get('demo') === '1' || urlParams.get('demo') === 'true') {
+      enableDemoMode();
+      fillGenPrompt('scifi');
     }
 
     updateStats();

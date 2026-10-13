@@ -20,7 +20,7 @@
   <a href="#-rest-api-reference">REST API</a>
 </p>
 
-![Qwen Upscaler Studio Desktop UI](docs/screenshots/ui_desktop_main.png)
+![Qwen Upscaler Studio Desktop UI](docs/screenshots/ui_desktop_studio.png)
 
 </div>
 
